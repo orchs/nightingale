@@ -14,7 +14,10 @@ cp -r ../pub .
 
 docker build -t nightingale:${tag} .
 
-docker tag nightingale:${tag} ulric2019/nightingale:${tag}
-docker push ulric2019/nightingale:${tag}
+docker tag nightingale:${tag} ccr.ccs.tencentyun.com/lightwan_ops/nightingale:latest
+docker push ccr.ccs.tencentyun.com/lightwan_ops/nightingale:latest
+
+docker tag nightingale:${tag} ccr.ccs.tencentyun.com/lightwan_ops/nightingale:${tag}
+docker push ccr.ccs.tencentyun.com/lightwan_ops/nightingale:${tag}
 
 rm -rf n9e pub
