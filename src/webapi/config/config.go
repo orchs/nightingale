@@ -100,6 +100,7 @@ type Config struct {
 	Ibex                 Ibex
 	OIDC                 oidcc.Config
 	TargetMetrics        map[string]string
+	Ltw                  Ltw
 }
 
 type ClusterOptions struct {
@@ -161,4 +162,32 @@ type Ibex struct {
 
 func (c *Config) IsDebugMode() bool {
 	return c.RunMode == "debug"
+}
+
+type LtwORCHEnvInfo struct {
+	Domain       string
+	ClientId     string
+	ClientSecret string
+	GroupId      int64
+	GroupName    string
+	Apply        bool
+}
+
+type Ltw struct {
+	HostQueryUrl       string
+	HostQueryKey       string
+	CtfPkgDownloadPath string
+	CtfPkgDownloadUser string
+	CtfPkgDownloadPass string
+	CtfVersion         string
+	TencentSecretId    string
+	TencentSecretKey   string
+	HostSSHType        string
+	ORCHGrantType      string
+	ORCHPullAlertApply bool
+	ORCHPullInterval   int
+	ORCHTokenApi       string
+	ORCHAlertsApi      string
+	ORCHAlertApi       string
+	ORCHEnvInfos       []LtwORCHEnvInfo
 }

@@ -19,6 +19,8 @@ import (
 	"github.com/didi/nightingale/v5/src/webapi/prom"
 	"github.com/didi/nightingale/v5/src/webapi/router"
 	"github.com/didi/nightingale/v5/src/webapi/stat"
+
+	"github.com/didi/nightingale/v5/src/webapi/router/ltw"
 )
 
 type Webapi struct {
@@ -124,6 +126,11 @@ func (a Webapi) initialize() (func(), error) {
 	// init http server
 	r := router.New(a.Version)
 	httpClean := httpx.Init(config.C.HTTP, r)
+
+	// 同步ORCH的告警数据
+	if config.C.Ltw.ORCHPullAlertApply {
+		go ltw.PullORCHAlertStart()
+	}
 
 	// release all the resources
 	return func() {

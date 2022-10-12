@@ -33,6 +33,11 @@ func Insert(obj interface{}) error {
 	return DB().Create(obj).Error
 }
 
+func Insert2Obj(obj interface{}) (interface{}, error) {
+	r := DB().Create(obj)
+	return obj, r.Error
+}
+
 // CryptoPass crypto password use salt
 func CryptoPass(raw string) (string, error) {
 	salt, err := ConfigsGet("salt")
