@@ -126,6 +126,12 @@ func checkLocalCurAlerts(token string, conf config.LtwORCHEnvInfo) []ORCHAlertCo
 			logger.Errorf("%v 数据解析失败！错误信息：%v", conf.GroupName, err)
 			continue
 		}
+
+		if data.Events == nil {
+			logger.Errorf("%v 未找到对应告警！错误信息：%v", conf.GroupName, v.Hash)
+			continue
+		}
+
 		if data.Events[0].Event != "firing" {
 			hisAlerts = append(hisAlerts, data)
 		}
