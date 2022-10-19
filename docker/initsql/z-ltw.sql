@@ -121,3 +121,53 @@ insert into busi_group(id, name, create_at, create_by, update_at, update_by) val
 insert into busi_group(id, name, create_at, create_by, update_at, update_by) values(1012, 'orch_有研_告警', unix_timestamp(now()), 'root', unix_timestamp(now()), 'root');
 insert into busi_group(id, name, create_at, create_by, update_at, update_by) values(1013, 'orch_有矿_告警', unix_timestamp(now()), 'root', unix_timestamp(now()), 'root');
 insert into busi_group(id, name, create_at, create_by, update_at, update_by) values(1014, 'orch_中交海外组网_告警', unix_timestamp(now()), 'root', unix_timestamp(now()), 'root');
+
+
+CREATE TABLE `ltw_ctf_logs` (
+     `id` bigint unsigned not null auto_increment,
+     `ip` varchar(64) default 'ip地址',
+     `hostname` varchar(64) default '主机名',
+     `action` varchar(64) not null,
+     `status` varchar(64) default '状态',
+     `stand_out` varchar(500) default '标准输出',
+     `create_at` bigint not null default 0,
+     `create_by` varchar(64) not null default '',
+     PRIMARY KEY (`id`),
+     KEY (`ip`),
+     KEY (`name`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE `ltw_ctf_item_logs` (
+    `id` bigint unsigned not null auto_increment,
+    `ip` varchar(64) default 'ip地址',
+    `ident` varchar(128) default 'ident',
+    `hostname` varchar(64) default '主机名',
+    `action` varchar(64) not null,
+    `status` varchar(64) default '状态',
+    `stand_out` varchar(500) default '标准输出',
+    `toml` varchar(5000) comment '配置信息',
+    `create_at` bigint not null default 0,
+    `create_by` varchar(64) not null default '',
+    PRIMARY KEY (`id`),
+    KEY (`ip`),
+    KEY (`hostname`),
+    KEY (`ident`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE `ltw_target_ctf_item` (
+     `id` bigint unsigned not null auto_increment,
+     `target_id` bigint unsigned,
+     `ip` varchar(64) not null comment 'ip',
+     `hostname` varchar(64) not null comment 'hostname',
+     `name` varchar(64) not null comment 'ctf config name',
+     `status` varchar(64) not null comment '状态',
+     `last_toml` varchar(5000) comment '历史配置',
+     `current_toml` varchar(5000) comment '当前配置',
+     `create_at` bigint not null default 0,
+     `create_by` varchar(64) not null default '',
+     `update_at` bigint not null default 0,
+     `update_by` varchar(64) not null default '',
+     PRIMARY KEY (`id`),
+     KEY (`ip`),
+     KEY (`name`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;

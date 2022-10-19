@@ -344,7 +344,7 @@ func configRoute(r *gin.Engine, version string) {
 		// 安装/升级/卸载/启用/禁用ctf
 		ltwPages.POST("/hosts/ctf", auth(), user(), ltw.HostCtfPost)
 		// 安装/升级/卸载/启用/禁用ctf
-		ltwPages.POST("/hosts/ctfNew", auth(), user(), ltw.HostCtfPostNew)
+		ltwPages.POST("/hosts/ctf2", auth(), user(), ltw.HostCtfPostNew)
 		//暂停ctf服务
 		ltwPages.DELETE("/hosts/ctf", auth(), user(), ltw.HostCtfDelete)
 
@@ -387,5 +387,16 @@ func configRoute(r *gin.Engine, version string) {
 		// 登录orch
 		// 同步orch告警数据
 		ltwPages.GET("/orch/alert/", ltw.ORCHAlertGet)
+	}
+
+	ltwNewPages := r.Group("api/ls")
+	{
+		ltwNewPages.GET("/hosts", auth(), user(), ltw.HostGets)
+		ltwNewPages.POST("/hosts/ctf", auth(), user(), ltw.HostCtfPosts)
+		ltwNewPages.GET("/hosts/ctf/logs", auth(), user(), ltw.CtfLogsGets)
+
+		ltwNewPages.GET("/targets/:target/items", auth(), user(), ltw.TargetConfGets)
+		ltwNewPages.GET("/targets/:target/items/:ctf", auth(), user(), ltw.TargetConfGet)
+		ltwNewPages.POST("/targets/items", auth(), user(), ltw.TargetConfPosts)
 	}
 }

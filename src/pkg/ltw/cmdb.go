@@ -3,7 +3,6 @@ package ltw
 import (
 	"fmt"
 	"github.com/didi/nightingale/v5/src/ltwmodels"
-	"github.com/didi/nightingale/v5/src/models"
 	"strings"
 
 	"context"
@@ -64,7 +63,7 @@ func Get(url string, params map[string]string, headers map[string]string) ([]byt
 	return resBody, nil
 }
 
-func GetCmdbHosts(user *models.User, tag int64, query string) ([]ltwmodels.CmdbHostInfo, error) {
+func GetCmdbHosts(tag int64, user, query string) ([]ltwmodels.CmdbHostInfo, error) {
 	// 获取cmdb主机列表
 
 	url := config.C.Ltw.HostQueryUrl
@@ -72,8 +71,8 @@ func GetCmdbHosts(user *models.User, tag int64, query string) ([]ltwmodels.CmdbH
 	params["auth_key"] = config.C.Ltw.HostQueryKey
 	params["tag"] = strconv.FormatInt(int64(tag), 10)
 
-	if user.Username != "root" {
-		params["user"] = user.Username
+	if user != "root" {
+		params["user"] = user
 	}
 	if query != "" {
 		params["query"] = query
@@ -104,7 +103,7 @@ func StorageHostToRedis(hosts []ltwmodels.CmdbHostInfo) error {
 			if len(t) < 2 {
 				continue
 			}
-			rsa, err := getSecret(t[0], t[1])
+			rsa, err := GetSecret(t[0], t[1])
 			if err != nil {
 				return err
 			}

@@ -283,3 +283,9 @@ func IdentsFilter(idents []string, where string, args ...interface{}) ([]string,
 	err := DB().Model(&Target{}).Where("ident in ?", idents).Where(where, args...).Pluck("ident", &arr).Error
 	return arr, err
 }
+
+func LtwIdentGets(id int64) ([]Target, error) {
+	var arr []Target
+	err := DB().Model(&Target{}).Where("id > ?", id).Find(&arr).Order("id").Error
+	return arr, err
+}

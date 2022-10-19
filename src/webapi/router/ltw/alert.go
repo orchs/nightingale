@@ -309,7 +309,6 @@ func persist(event *models.AlertCurEvent) {
 func PullORCHAlertStart() {
 	for {
 		time.Sleep(time.Second * time.Duration(config.C.Ltw.ORCHPullInterval))
-		fmt.Println(time.Now())
 		ORCHAlertUpdateTask()
 	}
 }

@@ -12,3 +12,12 @@ type CmdbHostInfo struct {
 	Actions   []string `json:"actions"`
 	User      string   `json:"user"`
 }
+
+type HostInfo struct {
+	Ip        string `json:"ip"`
+	HostName  string `json:"hostname"`
+	Port      string `json:"port"`
+	AdminUser string `json:"admin_user"`
+	Rsa       string `json:"rsa"`
+	Passwd    string `json:"passwd"`
+}

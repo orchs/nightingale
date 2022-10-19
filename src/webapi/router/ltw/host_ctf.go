@@ -1,10 +1,12 @@
 package ltw
 
 import (
+	"context"
 	"fmt"
 	"github.com/didi/nightingale/v5/src/ltwmodels"
 	"github.com/didi/nightingale/v5/src/models"
 	"github.com/didi/nightingale/v5/src/pkg/ltw"
+	"github.com/didi/nightingale/v5/src/storage"
 	"github.com/didi/nightingale/v5/src/webapi/config"
 	"github.com/gin-gonic/gin"
 	nsema "github.com/niean/gotools/concurrent/semaphore"
@@ -13,6 +15,8 @@ import (
 	"strings"
 	"time"
 )
+
+const LastUpdateTargetId = "last_update_target_id"
 
 func HostCtfGets(c *gin.Context) {
 	// 接口：根据主机名、监控项查询主机列表
@@ -23,7 +27,7 @@ func HostCtfGets(c *gin.Context) {
 	value := ginx.QueryStr(c, "value", "")
 	var ipStr string
 	ipMap := make(map[string]ltwmodels.HostCtf)
-	user := c.MustGet("user").(*models.User)
+	user := c.MustGet("user").(*models.User).Username
 	statusFlag := false
 
 	if query == "" && name == "" {
@@ -47,10 +51,10 @@ func HostCtfGets(c *gin.Context) {
 	var err error
 	if query == "" {
 		if ipStr != "" {
-			cmdbHosts, err = ltw.GetCmdbHosts(user, tag, ipStr)
+			cmdbHosts, err = ltw.GetCmdbHosts(tag, user, ipStr)
 		}
 	} else {
-		cmdbHosts, err = ltw.GetCmdbHosts(user, tag, query)
+		cmdbHosts, err = ltw.GetCmdbHosts(tag, user, query)
 	}
 
 	var resHosts []ltwmodels.CmdbHostInfo
@@ -295,12 +299,21 @@ func HostCtfPostNew(c *gin.Context) {
 	}
 
 	if len(b.Ips) == 1 {
-
 		_, err := actionHostCtf(b.Ips[0], script, sudoScript, actionName, newStatus, newActions, username)
 		ginx.Dangerous(err)
 	} else {
+		concurrentNum := 100
+		sema := nsema.NewSemaphore(concurrentNum)
+
 		for _, ip := range b.Ips {
-			go actionHostCtf(ip, script, sudoScript, actionName, newStatus, newActions, username)
+			go func(ip, script, sudoScript, actionName, newStatus, newActions, username string) {
+				if !sema.TryAcquire() {
+					return
+				}
+				defer sema.Release()
+
+				actionHostCtf(ip, script, sudoScript, actionName, newStatus, newActions, username)
+			}(ip, script, sudoScript, actionName, newStatus, newActions, username)
 		}
 	}
 
@@ -350,4 +363,42 @@ func HostCtfDelete(c *gin.Context) {
 		}
 	}
 	ginx.NewRender(c).Message("")
+}
+
+func autoAddCtfConf() {
+	ctx := context.Background()
+
+	id, err := storage.Redis.Get(ctx, LastUpdateTargetId).Int64()
+	if err != nil {
+		id = 1
+	}
+
+	list, err := models.LtwIdentGets(id)
+	if err != nil {
+		return
+	}
+
+	for _, ident := range list {
+		hostname, _, err := ltw.SplitHostnameAndIp(ident.Ident)
+
+		chs, err := ltw.GetCmdbHosts(1, "root", hostname)
+		if err != nil {
+			continue
+		}
+		hc := ltwmodels.HostCtf{
+			Ip:     chs[0].Ip,
+			Status: ltwmodels.HostCtfStatus.ENABLED,
+		}
+		hc.Save()
+		id = ident.Id
+	}
+
+	storage.Redis.Set(ctx, LastUpdateTargetId, id, time.Duration(time.Hour*24)).Err()
+}
+
+func UpdateCtfStatus() {
+	for {
+		time.Sleep(time.Second * 15)
+		autoAddCtfConf()
+	}
 }
