@@ -34,6 +34,7 @@ var CatConfArr = []CatConfInfo{
 	elasticsearchInfo,
 	execInfo,
 	httpResponseInfo,
+	influxdbInfo,
 	mongodbInfo,
 	mysqlInfo,
 	netResponseInfo,
@@ -57,6 +58,8 @@ func CreateQueryIndexes(hc ltwmodels.HostCtfConf) error {
 		cir, err = getTomlConfIndex(new(execToml), hc.LocalToml)
 	case "http_response":
 		cir, err = getTomlConfIndex(new(httpResponseToml), hc.LocalToml)
+	case "influxdb":
+		cir, err = getTomlConfIndex(new(influxdbToml), hc.LocalToml)
 	case "mongodb":
 		cir, err = getTomlConfIndex(new(mongodbToml), hc.LocalToml)
 	case "mysql":

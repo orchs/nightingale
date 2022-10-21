@@ -33,6 +33,11 @@ var Items = []ItemInfo{
 		Toml:   httpResponseInfo.Toml,
 	},
 	{
+		Name:   "influxdb",
+		Status: false,
+		Toml:   influxdbInfo.Toml,
+	},
+	{
 		Name:   "mongodb",
 		Status: false,
 		Toml:   mongodbInfo.Toml,
