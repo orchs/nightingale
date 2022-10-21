@@ -5,7 +5,7 @@ import (
 )
 
 var redisSentinelInfo = CatConfInfo{
-	Name:    "redisSentinel",
+	Name:    "redis_sentinel",
 	Indexes: []string{"instances.servers"},
 	Toml: string(`
 interval = 15
