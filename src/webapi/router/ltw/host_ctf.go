@@ -12,7 +12,6 @@ import (
 	nsema "github.com/niean/gotools/concurrent/semaphore"
 	"github.com/toolkits/pkg/ginx"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -80,11 +79,14 @@ func HostCtfGets(c *gin.Context) {
 		}
 
 		for _, ch := range cmdbHosts {
-			if ipMap[ch.Ip].Ip == "" {
-				ch.Status = ltwmodels.HostCtfStatus.DISABLED
+			ch.Status = ipMap[ch.Ip].Status
+			if ch.Status == ltwmodels.HostCtfStatus.ENABLED {
+				ch.Actions = []string{"DISABLED", "UNINSTALL"}
+			} else if ch.Status == ltwmodels.HostCtfStatus.DISABLED {
+				ch.Actions = []string{"ENABLE", "UPDATE", "UNINSTALL"}
 			} else {
-				ch.Status = ipMap[ch.Ip].Status
-				ch.Actions = strings.Split(ipMap[ch.Ip].Actions, ",")
+				ch.Status = ltwmodels.HostCtfStatus.UNINSTALLED
+				ch.Actions = []string{"INSTALL"}
 			}
 			resHosts = append(resHosts, ch)
 		}
@@ -135,7 +137,7 @@ func installLastVersion(ip, username string) (string, error) {
 	return msg, err
 }
 
-func actionHostCtf(ip, script, sudoScript, action, status, actions, username string) (string, error) {
+func actionHostCtf(ip, script, sudoScript, action, status, username string) (string, error) {
 	logStatus := ltwmodels.CtfConfLogStatus.SUCCEED
 	msg := "操作成功！"
 
@@ -148,9 +150,8 @@ func actionHostCtf(ip, script, sudoScript, action, status, actions, username str
 	}
 
 	hc := ltwmodels.HostCtf{
-		Ip:      ip,
-		Status:  status,
-		Actions: actions,
+		Ip:     ip,
+		Status: status,
 	}
 	err = hc.Save()
 	if err != nil {
@@ -270,50 +271,45 @@ func HostCtfPostNew(c *gin.Context) {
 	var sudoScript string
 	var actionName string
 	var newStatus string
-	var newActions string
 	if b.Action == "INSTALL" {
 		script, sudoScript = getInstallScript()
 		actionName = "安装categraf"
 		newStatus = "ENABLED"
-		newActions = "DISABLE,UNINSTALL"
 	} else if b.Action == "UNINSTALL" {
 		script, sudoScript = getUnInstallScript()
 		actionName = "卸载categraf"
 		newStatus = "UNINSTALLED"
-		newActions = "INSTALL"
 	} else if b.Action == "ENABLE" {
 		script = "systemctl start categraf"
 		sudoScript = "sudo systemctl start categraf"
 		actionName = "启用categraf"
 		newStatus = "ENABLED"
-		newActions = "ENABLED,UNINSTALL"
 	} else if b.Action == "DISABLE" {
 		script = "systemctl stop categraf"
 		sudoScript = "sudo systemctl stop categraf"
 		actionName = "禁用categraf"
 		newStatus = "DISABLED"
-		newActions = "ENABLED,UNINSTALL"
 	} else if b.Action == "PULL_SCRIPTS" {
 		script, sudoScript = getPullScriptScript()
 		actionName = "更新exec脚本"
 	}
 
 	if len(b.Ips) == 1 {
-		_, err := actionHostCtf(b.Ips[0], script, sudoScript, actionName, newStatus, newActions, username)
+		_, err := actionHostCtf(b.Ips[0], script, sudoScript, actionName, newStatus, username)
 		ginx.Dangerous(err)
 	} else {
 		concurrentNum := 100
 		sema := nsema.NewSemaphore(concurrentNum)
 
 		for _, ip := range b.Ips {
-			go func(ip, script, sudoScript, actionName, newStatus, newActions, username string) {
+			go func(ip, script, sudoScript, actionName, newStatus, username string) {
 				if !sema.TryAcquire() {
 					return
 				}
 				defer sema.Release()
 
-				actionHostCtf(ip, script, sudoScript, actionName, newStatus, newActions, username)
-			}(ip, script, sudoScript, actionName, newStatus, newActions, username)
+				actionHostCtf(ip, script, sudoScript, actionName, newStatus, username)
+			}(ip, script, sudoScript, actionName, newStatus, username)
 		}
 	}
 

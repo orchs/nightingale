@@ -25,15 +25,15 @@ func (hc *HostCtf) TableName() string {
 }
 
 type hostCtfStatus struct {
-	UNINSTALL string
-	ENABLED   string
-	DISABLED  string
+	UNINSTALLED string
+	ENABLED     string
+	DISABLED    string
 }
 
 var HostCtfStatus = hostCtfStatus{
-	ENABLED:   "ENABLED",
-	DISABLED:  "DISABLED",
-	UNINSTALL: "UNINSTALL",
+	ENABLED:     "ENABLED",
+	DISABLED:    "DISABLED",
+	UNINSTALLED: "UNINSTALLED",
 }
 
 func (hc *HostCtf) Verify() error {

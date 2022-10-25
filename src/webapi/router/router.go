@@ -334,7 +334,7 @@ func configRoute(r *gin.Engine, version string) {
 		service.DELETE("/configs", configsDel)
 	}
 
-	ltwPagesPrefix := "api/ltw"
+	ltwPagesPrefix := "/api/ltw"
 	ltwPages := r.Group(ltwPagesPrefix)
 	{
 		ltwPages.GET("/ctf/conf", auth(), user(), ltw.CtfConfGets)
