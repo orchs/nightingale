@@ -6,11 +6,10 @@ import (
 )
 
 func SplitHostnameAndIp(t string) (string, string, error) {
-	s := strings.Split(t, "_")
-	if len(s) != 2 {
-		return "", "", errors.New("target格式错误！")
-	}
-	return s[0], s[1], nil
+	a := strings.Split(t, "_")
+	s := make([]string, len(a)-1)
+	copy(s, a[:])
+	return strings.Join(s, "_"), a[len(a)-1], nil
 }
 
 func ResolveAdminInfo(info string) (string, string, error) {

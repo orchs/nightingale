@@ -14,7 +14,7 @@ interval = 30
 [[instances]]
 # # commands, support glob
 commands = [
-     "/opt/categraf/scripts/*.sh"
+     # "/opt/categraf/scripts/pop/*.sh"
 ]
 interval_times = 2
 timeout = 60

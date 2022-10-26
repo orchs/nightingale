@@ -58,10 +58,57 @@ var SeverityMap = map[string]int{
 	"trivial":  3,
 }
 
-func ORCHAlertGet(c *gin.Context) {
-	// 调试用
-	ORCHAlertUpdateTask()
+func SyncOrchAlert(c *gin.Context) {
+	// 通过categraf周期性调用
+	d := ginx.UrlParamStr(c, "d")
+	cid := ginx.UrlParamStr(c, "cid")
+	cs := ginx.UrlParamStr(c, "cs")
+	gid := ginx.UrlParamInt64(c, "gid")
+	env := ginx.UrlParamStr(c, "env")
+	if d == "" || cid == "" || cs == "" || gid == 0 || env == "" {
+		ginx.Bomb(400, "传参错误！")
+	}
+
+	token, err := getOrchToken(d, cid, cs, env)
+	if err != nil {
+		ginx.Bomb(500, "登录错误！")
+	}
+	getOrchAlert(d, token)
 	ginx.NewRender(c).Data("", nil)
+}
+
+func getOrchAlert(d, token string) {
+
+}
+func getOrchToken(d, cid, cs, env string) (string, error) {
+	ctx := context.Background()
+	tokenName := "o_token_" + env
+
+	token, err := storage.Redis.Get(ctx, tokenName).Result()
+	if err == nil {
+		return token, nil
+	}
+
+	readerStr := fmt.Sprintf("grant_type=%v&client_id=%v&client_secret=%v", config.C.Ltw.ORCHGrantType, cid, cs)
+
+	tokenApi := d + config.C.Ltw.ORCHTokenApi
+	body, err := ltw.HttpPost(tokenApi, readerStr)
+	if err != nil {
+		logger.Errorf("登录%v失败！%v, 错误信息：%v", env, tokenApi, err)
+		return "", err
+	}
+
+	var data ORCHAuthResponse
+	if err := json.Unmarshal(body, &data); err != nil {
+		logger.Errorf("获取 %v token失败！%v, 错误信息：%v", env, tokenApi, err)
+		return "", err
+	}
+
+	token = data.TokenType + " " + data.AccessToken
+	expiresIn := time.Duration(time.Second * time.Duration(data.ExpiresIn))
+	storage.Redis.Set(ctx, tokenName, token, expiresIn).Err()
+
+	return token, nil
 }
 
 func ORCHAlertUpdateTask() {

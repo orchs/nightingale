@@ -1,12 +1,10 @@
 package ltw
 
 import (
-	"context"
 	"fmt"
 	"github.com/didi/nightingale/v5/src/ltwmodels"
 	"github.com/didi/nightingale/v5/src/models"
 	"github.com/didi/nightingale/v5/src/pkg/ltw"
-	"github.com/didi/nightingale/v5/src/storage"
 	"github.com/didi/nightingale/v5/src/webapi/config"
 	"github.com/gin-gonic/gin"
 	nsema "github.com/niean/gotools/concurrent/semaphore"
@@ -14,8 +12,6 @@ import (
 	"net/http"
 	"time"
 )
-
-const LastUpdateTargetId = "last_update_target_id"
 
 func HostCtfGets(c *gin.Context) {
 	// 接口：根据主机名、监控项查询主机列表
@@ -109,42 +105,6 @@ func HostCtfGets(c *gin.Context) {
 
 }
 
-func installLastVersion(ip, username string) (string, error) {
-	status := ltwmodels.CtfConfLogStatus.SUCCEED
-	var msg string
-
-	std, err := ltw.InstallHostCtf(ip)
-	if err != nil {
-		msg = "安装失败！" + err.Error()
-		status = ltwmodels.CtfConfLogStatus.FAILED
-		ltwmodels.AddHostCtfConfLog(0, ip, "config", status, msg, "", "", std, username)
-	} else {
-		hc := ltwmodels.HostCtf{
-			Ip:     ip,
-			Status: ltwmodels.HostCtfStatus.ENABLED,
-		}
-		hc.Save()
-
-		remoteToml, readErr := ltw.ReadConfToml(ip)
-		if readErr != nil {
-			msg += readErr.Error()
-			ltwmodels.AddHostCtfConfLog(0, ip, "config", status, msg, "", "", std, username)
-		} else {
-			err = saveHostCtfConf(
-				ip,
-				"config",
-				"",
-				remoteToml,
-				status,
-				"",
-				username,
-			)
-		}
-	}
-
-	return msg, err
-}
-
 func actionHostCtf(ip, script, sudoScript, action, status, username string) (string, error) {
 	logStatus := ltwmodels.CtfConfLogStatus.SUCCEED
 	msg := "操作成功！"
@@ -169,26 +129,6 @@ func actionHostCtf(ip, script, sudoScript, action, status, username string) (str
 	ltwmodels.AddHostCtfConfLog(0, ip, action, logStatus, msg, "", "", std, username)
 
 	return msg, err
-}
-
-func uninstallCtf(ip, username string) (string, error) {
-	var msg string
-	status := ltwmodels.CtfConfLogStatus.SUCCEED
-	std, err := ltw.StopHostCtf(ip)
-	if err != nil {
-		status = ltwmodels.CtfConfLogStatus.FAILED
-		msg = "卸载失败！" + msg
-	} else {
-		hc := ltwmodels.HostCtf{
-			Ip:     ip,
-			Status: ltwmodels.HostCtfStatus.DISABLED,
-		}
-		hc.Save()
-		msg = "卸载成功！"
-	}
-	ltwmodels.AddHostCtfConfLog(0, ip, "config", status, msg, "", "", std, username)
-
-	return std, err
 }
 
 func getInstallScript() (string, string) {
@@ -322,87 +262,4 @@ func HostCtfPostNew(c *gin.Context) {
 	}
 
 	ginx.NewRender(c).Message("")
-}
-
-func HostCtfPost(c *gin.Context) {
-	// 接口：批量安装categraf
-	var b ipsRequestBody
-	ginx.BindJSON(c, &b)
-	username := c.MustGet("user").(*models.User).Username
-
-	concurrentNum := 100
-	sema := nsema.NewSemaphore(concurrentNum)
-
-	if len(b.Ips) == 1 {
-		_, err := installLastVersion(b.Ips[0], username)
-		ginx.Dangerous(err)
-	} else {
-		for _, ip := range b.Ips {
-			go func(ip, username string) {
-				if !sema.TryAcquire() {
-					return
-				}
-				defer sema.Release()
-
-				installLastVersion(ip, username)
-			}(ip, username)
-		}
-	}
-
-	ginx.NewRender(c).Message("")
-}
-
-func HostCtfDelete(c *gin.Context) {
-	// 接口：批量卸载categraf
-	var b ipsRequestBody
-	ginx.BindJSON(c, &b)
-	username := c.MustGet("user").(*models.User).Username
-
-	if len(b.Ips) == 1 {
-		_, err := uninstallCtf(b.Ips[0], username)
-		ginx.Dangerous(err)
-	} else {
-		for _, ip := range b.Ips {
-			go uninstallCtf(ip, username)
-		}
-	}
-	ginx.NewRender(c).Message("")
-}
-
-func autoAddCtfConf() {
-	ctx := context.Background()
-
-	id, err := storage.Redis.Get(ctx, LastUpdateTargetId).Int64()
-	if err != nil {
-		id = 1
-	}
-
-	list, err := models.LtwIdentGets(id)
-	if err != nil {
-		return
-	}
-
-	for _, ident := range list {
-		hostname, _, err := ltw.SplitHostnameAndIp(ident.Ident)
-
-		chs, err := ltw.GetCmdbHosts(1, "root", hostname)
-		if err != nil {
-			continue
-		}
-		hc := ltwmodels.HostCtf{
-			Ip:     chs[0].Ip,
-			Status: ltwmodels.HostCtfStatus.ENABLED,
-		}
-		hc.Save()
-		id = ident.Id
-	}
-
-	storage.Redis.Set(ctx, LastUpdateTargetId, id, time.Duration(time.Hour*24)).Err()
-}
-
-func UpdateCtfStatus() {
-	for {
-		time.Sleep(time.Second * 15)
-		autoAddCtfConf()
-	}
 }

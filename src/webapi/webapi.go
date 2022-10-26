@@ -131,7 +131,6 @@ func (a Webapi) initialize() (func(), error) {
 	if config.C.Ltw.ORCHPullAlertApply {
 		go ltw.PullORCHAlertStart()
 	}
-	//go ltw.UpdateCtfStatus()
 
 	// release all the resources
 	return func() {

@@ -342,11 +342,7 @@ func configRoute(r *gin.Engine, version string) {
 		// 查询主机列表
 		ltwPages.GET("/hosts", auth(), user(), ltw.HostCtfGets)
 		// 安装/升级/卸载/启用/禁用ctf
-		ltwPages.POST("/hosts/ctf", auth(), user(), ltw.HostCtfPost)
-		// 安装/升级/卸载/启用/禁用ctf
-		ltwPages.POST("/hosts/ctf2", auth(), user(), ltw.HostCtfPostNew)
-		//暂停ctf服务
-		ltwPages.DELETE("/hosts/ctf", auth(), user(), ltw.HostCtfDelete)
+		ltwPages.POST("/hosts/ctf", auth(), user(), ltw.HostCtfPostNew)
 
 		// 获取主机监控项配置信息
 		ltwPages.GET("/hosts/:ip/ctf/conf", auth(), user(), ltw.HostCtfConfGets)
@@ -363,18 +359,15 @@ func configRoute(r *gin.Engine, version string) {
 		// 排班管理
 		// 获取一周中的天
 		ltwPages.GET("/years/:year/weeks/:week/", ltw.GetWeekDays)
-
 		// 排班配置
 		ltwPages.GET("/groups/:gid/duty-conf", ltw.DutyConfGets)
 		ltwPages.POST("/groups/:gid/duty-conf", ltw.DutyConfAdd)
 		ltwPages.PUT("/groups/:gid/duty-conf/:cid", ltw.DutyConfPut)
 		ltwPages.DELETE("/groups/:gid/duty-conf/:cid", ltw.DutyConfDel)
-
 		// 排班记录
 		ltwPages.GET("/groups/:gid/duty-roster/years/:year/weeks/:week/", ltw.DutyRosterGets)
 		ltwPages.POST("/groups/:gid/duty-roster", ltw.DutyRosterPost)
 		ltwPages.POST("/groups/:gid/duty-roster/copy", ltw.DutyRosterCopy)
-
 		// 获取当前值班人员
 		ltwPages.GET("/groups/:gid/duty-roster/watchkeeper", ltw.WatchkeeperGets)
 
@@ -384,9 +377,8 @@ func configRoute(r *gin.Engine, version string) {
 		// 获取回调结果
 		ltwPages.GET("/voices/:cid/", ltw.VoiceGet)
 
-		// 登录orch
 		// 同步orch告警数据
-		ltwPages.GET("/orch/alert/", ltw.ORCHAlertGet)
+		ltwPages.GET("/orch/alert/", ltw.SyncOrchAlert)
 	}
 
 	ltwNewPages := r.Group("api/ls")
