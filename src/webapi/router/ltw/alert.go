@@ -170,7 +170,7 @@ func checkLocalCurAlerts(token string, conf config.LtwORCHEnvInfo) []ORCHAlertCo
 
 		var data ORCHAlertContent
 		if err := json.Unmarshal(a, &data); err != nil {
-			logger.Errorf("%v 数据解析失败！错误信息：%v", conf.GroupName, err)
+			logger.Errorf("%v 数据解析失败！data: %v 错误信息：%v", conf.GroupName, a, err)
 			continue
 		}
 
@@ -206,7 +206,7 @@ func updateORCHAlert(ctx context.Context, conf config.LtwORCHEnvInfo, params map
 	)
 	var data ORCHAlertsResponse
 	if err := json.Unmarshal(lst, &data); err != nil {
-		logger.Errorf("%v 数据解析失败！错误信息：%v", conf.GroupName, err)
+		logger.Errorf("%v 数据解析失败！data: %v, 错误信息：%v", conf.GroupName, lst, err)
 		return
 	}
 
