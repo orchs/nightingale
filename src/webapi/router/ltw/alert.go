@@ -191,7 +191,7 @@ func updateORCHAlert(ctx context.Context, conf config.LtwORCHEnvInfo, params map
 
 	logger.Debugf("开始同步 %v 告警数据。。。 。。。", conf.GroupName)
 
-	token, err := getOToken(ctx, conf)
+	token, err := getOToken(conf)
 	if err != nil {
 		return
 	}
@@ -245,7 +245,34 @@ func updateORCHAlert(ctx context.Context, conf config.LtwORCHEnvInfo, params map
 	logger.Debugf("%v 数据同步完成！", conf.GroupName)
 }
 
-func getOToken(ctx context.Context, conf config.LtwORCHEnvInfo) (string, error) {
+func getOToken(conf config.LtwORCHEnvInfo) (string, error) {
+
+	readerStr := fmt.Sprintf(
+		"grant_type=%v&client_id=%v&client_secret=%v",
+		config.C.Ltw.ORCHGrantType,
+		conf.ClientId,
+		conf.ClientSecret,
+	)
+
+	tokenApi := conf.Domain + config.C.Ltw.ORCHTokenApi
+	body, err := ltw.HttpPost(tokenApi, readerStr)
+	if err != nil {
+		logger.Errorf("登录%v失败！%v, 错误信息：%v", conf.GroupName, tokenApi, err)
+		return "", err
+	}
+
+	var data ORCHAuthResponse
+	if err := json.Unmarshal(body, &data); err != nil {
+		logger.Errorf("获取 %v token失败！%v, 错误信息：%v", conf.GroupName, tokenApi, err)
+		return "", err
+	}
+
+	token := data.TokenType + " " + data.AccessToken
+
+	return token, nil
+}
+
+func getOToken2(ctx context.Context, conf config.LtwORCHEnvInfo) (string, error) {
 	tokenName := "o_token_" + string(conf.GroupId)
 
 	token, err := storage.Redis.Get(ctx, tokenName).Result()
