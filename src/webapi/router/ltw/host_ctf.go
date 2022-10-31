@@ -59,7 +59,7 @@ func HostCtfGets(c *gin.Context) {
 			if v, ok := ipMap[ch.Ip]; ok {
 				ch.Status = v.Status
 				if ch.Status == ltwmodels.HostCtfStatus.ENABLED {
-					ch.Actions = []string{"DISABLED", "UNINSTALL"}
+					ch.Actions = []string{"DISABLE", "UNINSTALL"}
 				} else if ch.Status == ltwmodels.HostCtfStatus.DISABLED {
 					ch.Actions = []string{"ENABLE", "UPDATE", "UNINSTALL"}
 				} else {

@@ -43,6 +43,11 @@ var Items = []ItemInfo{
 		Toml:   mongodbInfo.Toml,
 	},
 	{
+		Name:   "net",
+		Status: false,
+		Toml:   netInfo.Toml,
+	},
+	{
 		Name:   "net_response",
 		Status: false,
 		Toml:   netResponseInfo.Toml,
