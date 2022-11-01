@@ -45,6 +45,9 @@ timeout = 1
 ## Number of data bytes to be sent. Corresponds to the "-s"
 ## option of the ping command.
 # size = 56
+
+# max concurrency coroutine
+# concurrency = 50
 `,
 	),
 }

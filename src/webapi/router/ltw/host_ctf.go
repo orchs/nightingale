@@ -58,8 +58,9 @@ func HostCtfGets(c *gin.Context) {
 		for _, ch := range cmdbHosts {
 			if v, ok := ipMap[ch.Ip]; ok {
 				ch.Status = v.Status
+				ch.Version = v.Version
 				if ch.Status == ltwmodels.HostCtfStatus.ENABLED {
-					ch.Actions = []string{"DISABLE", "UNINSTALL"}
+					ch.Actions = []string{"DISABLE", "UPDATE", "UNINSTALL"}
 				} else if ch.Status == ltwmodels.HostCtfStatus.DISABLED {
 					ch.Actions = []string{"ENABLE", "UPDATE", "UNINSTALL"}
 				} else {
@@ -112,14 +113,15 @@ func actionHostCtf(ip, script, sudoScript, action, status, username string) (str
 	std, err := ltw.RunScript(ip, script, sudoScript)
 	if err != nil {
 		msg = "操作失败！" + err.Error()
-		status = ltwmodels.CtfConfLogStatus.FAILED
+		logStatus := ltwmodels.CtfConfLogStatus.FAILED
 		ltwmodels.AddHostCtfConfLog(0, ip, action, logStatus, msg, "", "", std, username)
 		return msg, err
 	}
 
 	hc := ltwmodels.HostCtf{
-		Ip:     ip,
-		Status: status,
+		Ip:      ip,
+		Status:  status,
+		Version: config.C.Ltw.CtfVersion,
 	}
 	err = hc.Save()
 	if err != nil {
@@ -183,7 +185,7 @@ func getUnInstallScript() (string, string) {
 	return script, sudoScript
 }
 
-func getPullScriptScript() (string, string) {
+func getUpdateScriptScript() (string, string) {
 	var script string
 	var sudoScript string
 
@@ -237,9 +239,10 @@ func HostCtfPostNew(c *gin.Context) {
 		sudoScript = "sudo systemctl stop categraf"
 		actionName = "禁用categraf"
 		newStatus = "DISABLED"
-	} else if b.Action == "PULL_SCRIPTS" {
-		script, sudoScript = getPullScriptScript()
-		actionName = "更新exec脚本"
+	} else if b.Action == "UPDATE" {
+		script, sudoScript = getUpdateScriptScript()
+		actionName = "更新categraf"
+		newStatus = "ENABLED"
 	}
 
 	if len(b.Ips) == 1 {

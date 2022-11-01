@@ -11,6 +11,7 @@ type CmdbHostInfo struct {
 	Passwd    string   `json:"passwd"`
 	Actions   []string `json:"actions"`
 	User      string   `json:"user"`
+	Version   string   `json:"version"`
 }
 
 type HostInfo struct {

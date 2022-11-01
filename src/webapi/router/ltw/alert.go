@@ -191,7 +191,7 @@ func updateORCHAlert(ctx context.Context, conf config.LtwORCHEnvInfo, params map
 
 	logger.Debugf("开始同步 %v 告警数据。。。 。。。", conf.GroupName)
 
-	token, err := getOToken(conf)
+	token, err := getOToken(ctx, conf)
 	if err != nil {
 		return
 	}
@@ -245,7 +245,7 @@ func updateORCHAlert(ctx context.Context, conf config.LtwORCHEnvInfo, params map
 	logger.Debugf("%v 数据同步完成！", conf.GroupName)
 }
 
-func getOToken(conf config.LtwORCHEnvInfo) (string, error) {
+func getOToken2(conf config.LtwORCHEnvInfo) (string, error) {
 
 	readerStr := fmt.Sprintf(
 		"grant_type=%v&client_id=%v&client_secret=%v",
@@ -272,7 +272,7 @@ func getOToken(conf config.LtwORCHEnvInfo) (string, error) {
 	return token, nil
 }
 
-func getOToken2(ctx context.Context, conf config.LtwORCHEnvInfo) (string, error) {
+func getOToken(ctx context.Context, conf config.LtwORCHEnvInfo) (string, error) {
 	tokenName := "o_token_" + string(conf.GroupId)
 
 	token, err := storage.Redis.Get(ctx, tokenName).Result()

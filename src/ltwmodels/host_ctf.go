@@ -65,7 +65,7 @@ func HostCtfGet(where string, args ...interface{}) (HostCtf, error) {
 
 func GetHostCtfByConf(name, index, value string) ([]HostCtf, error) {
 	// 通过索引表中的值查询主机ip列表
-	session := models.DB().Model(&HostCtf{}).Select("distinct ltw_host_ctf.ip, ltw_host_ctf.status").Joins(
+	session := models.DB().Model(&HostCtf{}).Select("distinct ltw_host_ctf.ip, ltw_host_ctf.status, ltw_host_ctf.version").Joins(
 		"LEFT JOIN ltw_host_ctf_conf ON ltw_host_ctf_conf.ip = ltw_host_ctf.ip",
 	).Joins(
 		"LEFT JOIN ltw_host_ctf_conf_index ON ltw_host_ctf_conf_index.host_ctf_conf_id = ltw_host_ctf_conf.id",
