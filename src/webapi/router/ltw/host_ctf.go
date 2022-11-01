@@ -60,9 +60,9 @@ func HostCtfGets(c *gin.Context) {
 				ch.Status = v.Status
 				ch.Version = v.Version
 				if ch.Status == ltwmodels.HostCtfStatus.ENABLED {
-					ch.Actions = []string{"DISABLE", "UPDATE", "UNINSTALL"}
+					ch.Actions = []string{"DISABLE", "UPDATE"}
 				} else if ch.Status == ltwmodels.HostCtfStatus.DISABLED {
-					ch.Actions = []string{"ENABLE", "UPDATE", "UNINSTALL"}
+					ch.Actions = []string{"ENABLE", "UPDATE"}
 				} else {
 					ch.Status = ltwmodels.HostCtfStatus.UNINSTALLED
 					ch.Actions = []string{"INSTALL"}
@@ -86,9 +86,9 @@ func HostCtfGets(c *gin.Context) {
 		for _, ch := range cmdbHosts {
 			ch.Status = ipMap[ch.Ip].Status
 			if ch.Status == ltwmodels.HostCtfStatus.ENABLED {
-				ch.Actions = []string{"DISABLED", "UNINSTALL"}
+				ch.Actions = []string{"DISABLED"}
 			} else if ch.Status == ltwmodels.HostCtfStatus.DISABLED {
-				ch.Actions = []string{"ENABLE", "UPDATE", "UNINSTALL"}
+				ch.Actions = []string{"ENABLE", "UPDATE"}
 			} else {
 				ch.Status = ltwmodels.HostCtfStatus.UNINSTALLED
 				ch.Actions = []string{"INSTALL"}
