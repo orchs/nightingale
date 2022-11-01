@@ -134,7 +134,7 @@ CREATE TABLE `ltw_ctf_logs` (
      `create_by` varchar(64) not null default '',
      PRIMARY KEY (`id`),
      KEY (`ip`),
-     KEY (`name`)
+     KEY (`hostname`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 CREATE TABLE `ltw_ctf_item_logs` (
