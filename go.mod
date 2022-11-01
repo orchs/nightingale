@@ -9,7 +9,7 @@ require (
 	github.com/gin-contrib/pprof v1.3.0
 	github.com/gin-gonic/gin v1.7.4
 	github.com/go-ldap/ldap/v3 v3.4.1
-	github.com/go-redis/redis/v9 v9.0.0-beta.2
+	github.com/go-redis/redis/v9 v9.0.0-rc.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/protobuf v1.5.2
