@@ -94,7 +94,7 @@ func HostCtfGets(c *gin.Context) {
 		for _, ch := range cmdbHosts {
 			ch.Status = ipMap[ch.Ip].Status
 			if ch.Status == ltwmodels.HostCtfStatus.ENABLED {
-				ch.Actions = []string{"DISABLED"}
+				ch.Actions = []string{"DISABLE"}
 			} else if ch.Status == ltwmodels.HostCtfStatus.DISABLED {
 				ch.Actions = []string{"ENABLE", "UPDATE"}
 			} else {
