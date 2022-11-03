@@ -6,6 +6,7 @@ import (
 	"github.com/didi/nightingale/v5/src/models"
 	"github.com/didi/nightingale/v5/src/pkg/ltw"
 	"github.com/didi/nightingale/v5/src/pkg/ltw/ctf"
+	"github.com/gammazero/workerpool"
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/ginx"
 )
@@ -250,14 +251,19 @@ func HostCtfConfBatchPost(c *gin.Context) {
 	// 接口：批量修改监控项
 	var b multiHcRequestBody
 	ginx.BindJSON(c, &b)
-	for _, ip := range b.Ips {
-		go updateHostCtfConf(
-			ip,
-			b.Name,
-			b.LocalToml,
-			c.MustGet("user").(*models.User).Username,
-			b.IsApply,
-		)
+	username := c.MustGet("user").(*models.User).Username
+
+	if len(b.Ips) == 1 {
+		err := updateHostCtfConf(b.Ips[0], b.Name, b.LocalToml, username, b.IsApply)
+		ginx.Dangerous(err)
+	} else {
+		wp := workerpool.New(10)
+		for _, ip := range b.Ips {
+			ip := ip
+			wp.Submit(func() {
+				updateHostCtfConf(ip, b.Name, b.LocalToml, username, b.IsApply)
+			})
+		}
 	}
 
 	ginx.NewRender(c).Message("")
