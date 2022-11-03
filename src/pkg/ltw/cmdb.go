@@ -71,7 +71,7 @@ func GetCmdbHosts(tag int64, user, query string) ([]ltwmodels.CmdbHostInfo, erro
 	params["auth_key"] = config.C.Ltw.HostQueryKey
 	params["tag"] = strconv.FormatInt(int64(tag), 10)
 
-	if user != "root" {
+	if user != "root" && user != "install_ctf" {
 		params["user"] = user
 	}
 	if query != "" {

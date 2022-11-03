@@ -6,8 +6,8 @@ import (
 	"github.com/didi/nightingale/v5/src/models"
 	"github.com/didi/nightingale/v5/src/pkg/ltw"
 	"github.com/didi/nightingale/v5/src/webapi/config"
+	"github.com/gammazero/workerpool"
 	"github.com/gin-gonic/gin"
-	nsema "github.com/niean/gotools/concurrent/semaphore"
 	"github.com/toolkits/pkg/ginx"
 	"net/http"
 	"time"
@@ -266,18 +266,12 @@ func HostCtfPostNew(c *gin.Context) {
 		_, err := actionHostCtf(b.Ips[0], script, sudoScript, actionName, newStatus, username)
 		ginx.Dangerous(err)
 	} else {
-		concurrentNum := 100
-		sema := nsema.NewSemaphore(concurrentNum)
-
+		wp := workerpool.New(10)
 		for _, ip := range b.Ips {
-			go func(ip, script, sudoScript, actionName, newStatus, username string) {
-				if !sema.TryAcquire() {
-					return
-				}
-				defer sema.Release()
-
+			ip := ip
+			wp.Submit(func() {
 				actionHostCtf(ip, script, sudoScript, actionName, newStatus, username)
-			}(ip, script, sudoScript, actionName, newStatus, username)
+			})
 		}
 	}
 
