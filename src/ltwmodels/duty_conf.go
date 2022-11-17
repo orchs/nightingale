@@ -62,6 +62,7 @@ func (dc *DutyConf) Add() error {
 	now := time.Now().Unix()
 	dc.CreateAt = now
 	dc.UpdateAt = now
+	dc.Using = 1
 
 	return models.Insert(dc)
 }

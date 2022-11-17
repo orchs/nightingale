@@ -98,7 +98,7 @@ func WeekStart(year, week int64) time.Time {
 
 	// Difference in weeks:
 	_, w := t.ISOWeek()
-	t = t.AddDate(0, 0, (int(week)-w)*7)
+	t = t.AddDate(0, 0, (int(week-1)-w)*7)
 
 	return t
 }
