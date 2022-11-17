@@ -83,6 +83,7 @@ func (dc *DutyConf) Update(dcf DutyConf) error {
 	dcf.GroupId = dc.GroupId
 	dcf.CreateAt = dc.CreateAt
 	dcf.CreateBy = dc.CreateBy
+	dcf.Using = 1
 	dcf.UpdateAt = time.Now().Unix()
 	err := dcf.Verify()
 	if err != nil {
