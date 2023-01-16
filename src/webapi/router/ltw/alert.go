@@ -8,8 +8,6 @@ import (
 	"github.com/didi/nightingale/v5/src/pkg/ltw"
 	"github.com/didi/nightingale/v5/src/storage"
 	"github.com/didi/nightingale/v5/src/webapi/config"
-	"github.com/gin-gonic/gin"
-	"github.com/toolkits/pkg/ginx"
 	"github.com/toolkits/pkg/logger"
 	"time"
 )
@@ -58,28 +56,6 @@ var SeverityMap = map[string]int{
 	"trivial":  3,
 }
 
-func SyncOrchAlert(c *gin.Context) {
-	// 通过categraf周期性调用
-	d := ginx.UrlParamStr(c, "d")
-	cid := ginx.UrlParamStr(c, "cid")
-	cs := ginx.UrlParamStr(c, "cs")
-	gid := ginx.UrlParamInt64(c, "gid")
-	env := ginx.UrlParamStr(c, "env")
-	if d == "" || cid == "" || cs == "" || gid == 0 || env == "" {
-		ginx.Bomb(400, "传参错误！")
-	}
-
-	token, err := getOrchToken(d, cid, cs, env)
-	if err != nil {
-		ginx.Bomb(500, "登录错误！")
-	}
-	getOrchAlert(d, token)
-	ginx.NewRender(c).Data("", nil)
-}
-
-func getOrchAlert(d, token string) {
-
-}
 func getOrchToken(d, cid, cs, env string) (string, error) {
 	ctx := context.Background()
 	tokenName := "o_token_" + env
@@ -232,8 +208,8 @@ func updateORCHAlert(ctx context.Context, conf config.LtwORCHEnvInfo, params map
 			firstTime, _ := time.ParseInLocation("2006-01-02 15:04:05", v.Events[0].CreatedAt, time.Local)
 			event.FirstTriggerTime = firstTime.Unix()
 			event.TriggerTime = firstTime.Unix()
-		} else {
-			firstTime, _ := time.ParseInLocation("2006-01-02 15:04:05", v.Events[1].CreatedAt, time.Local)
+		} else if v.Events[0].Event == "closed" {
+			firstTime, _ := time.ParseInLocation("2006-01-02 15:04:05", v.Events[len(v.Events)-1].CreatedAt, time.Local)
 			curTime, _ := time.ParseInLocation("2006-01-02 15:04:05", v.Events[0].CreatedAt, time.Local)
 			event.FirstTriggerTime = firstTime.Unix()
 			event.TriggerTime = firstTime.Unix()
@@ -243,33 +219,6 @@ func updateORCHAlert(ctx context.Context, conf config.LtwORCHEnvInfo, params map
 		persist(&event)
 	}
 	logger.Debugf("%v 数据同步完成！", conf.GroupName)
-}
-
-func getOToken2(conf config.LtwORCHEnvInfo) (string, error) {
-
-	readerStr := fmt.Sprintf(
-		"grant_type=%v&client_id=%v&client_secret=%v",
-		config.C.Ltw.ORCHGrantType,
-		conf.ClientId,
-		conf.ClientSecret,
-	)
-
-	tokenApi := conf.Domain + config.C.Ltw.ORCHTokenApi
-	body, err := ltw.HttpPost(tokenApi, readerStr)
-	if err != nil {
-		logger.Errorf("登录%v失败！%v, 错误信息：%v", conf.GroupName, tokenApi, err)
-		return "", err
-	}
-
-	var data ORCHAuthResponse
-	if err := json.Unmarshal(body, &data); err != nil {
-		logger.Errorf("获取 %v token失败！%v, 错误信息：%v", conf.GroupName, tokenApi, err)
-		return "", err
-	}
-
-	token := data.TokenType + " " + data.AccessToken
-
-	return token, nil
 }
 
 func getOToken(ctx context.Context, conf config.LtwORCHEnvInfo) (string, error) {

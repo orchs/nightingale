@@ -381,7 +381,7 @@ func configRoute(r *gin.Engine, version string) {
 		ltwPages.GET("/voices/:cid/", ltw.VoiceGet)
 
 		// 同步orch告警数据
-		ltwPages.GET("/orch/alert/", ltw.SyncOrchAlert)
+		ltwPages.GET("/orch/alert", ltw.SyncOAlert)
 	}
 
 	ltwNewPages := r.Group("api/ls")
