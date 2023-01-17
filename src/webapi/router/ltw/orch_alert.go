@@ -3,15 +3,16 @@ package ltw
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/didi/nightingale/v5/src/models"
 	"github.com/didi/nightingale/v5/src/pkg/ltw"
 	"github.com/didi/nightingale/v5/src/storage"
 	"github.com/didi/nightingale/v5/src/webapi/config"
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 	"github.com/toolkits/pkg/ginx"
 	"github.com/toolkits/pkg/logger"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -35,13 +36,14 @@ func SyncOAlert(c *gin.Context) {
 	gid, _ := strconv.ParseInt(gidStr, 10, 64)
 	cf, err := initParams(gid)
 	if err != nil {
-		ginx.Bomb(500, "参数错误！")
+		ginx.Bomb(http.StatusInternalServerError, "参数错误: %s", err)
 	}
 
 	// 2.登录，获取token
 	token, err := oauthToken(cf.Domain, config.C.Ltw.ORCHGrantType, cf.ClientId, cf.ClientSecret, cf.GroupName)
 	if err != nil {
-		ginx.Bomb(500, "登录错误！")
+		logger.Errorf("获取 %v token失败！ 错误信息：%v, 响应数据：%s", cf.GroupName, err)
+		ginx.Bomb(http.StatusInternalServerError, "登录错误: %s", err)
 	}
 
 	// 3.拉取最新时间段内告警数据
@@ -60,11 +62,11 @@ func SyncOAlert(c *gin.Context) {
 	logger.Debugf("开始同步%v数据,同步范围 %v ~ %v", cf.GroupName, after, before)
 	alerts, err := getOAlerts(after, before, cf.Domain, token)
 	if err != nil {
-		ginx.Bomb(500, fmt.Sprintf("拉取%v数据出错:%v", cf.GroupName, err))
+		ginx.Bomb(http.StatusInternalServerError, "拉取%v数据出错:%s", cf.GroupName, err)
 	}
 	curAlerts, err := getLocalCurAlerts(gid, cf.GroupName, cf.Domain, token)
 	if err != nil {
-		ginx.Bomb(500, fmt.Sprintf("同步活跃告警信息%v出错:%v", cf.GroupName, err))
+		ginx.Bomb(http.StatusInternalServerError, "同步活跃告警信息%v出错:%v", cf.GroupName, err)
 	}
 
 	alerts = append(alerts, curAlerts...)
@@ -179,8 +181,7 @@ func oauthToken(domain, gt, cid, cs, gName string) (string, error) {
 
 	var data ORCHAuthResponse
 	if err := json.Unmarshal(body, &data); err != nil {
-		logger.Errorf("获取 %v token失败！%v, 错误信息：%v", gName, tokenApi, err)
-		return "", err
+		return "", errors.Wrapf(err, "获取 %v token失败！%v, 错误信息：%v, 响应数据：%s", gName, tokenApi, err, body)
 	}
 
 	token = data.TokenType + " " + data.AccessToken
