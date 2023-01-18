@@ -74,6 +74,7 @@ func SyncOAlert(c *gin.Context) {
 	handleAlerts(gid, cf.GroupName, alerts)
 
 	storage.Redis.Set(ctx, lastUpdateTIme, before, time.Duration(time.Hour)).Err()
+	logger.Debugf("%v同步完成：同步范围 %v ~ %v", cf.GroupName, after, before)
 	ginx.NewRender(c).Data("", nil)
 }
 
@@ -114,6 +115,7 @@ func getOAlerts(after, before, domain, token string) ([]ORCHAlertContent, error)
 	api := domain + config.C.Ltw.ORCHAlertsApi
 	res, err := reqOAlerts(api, token, after, before, "0")
 	if err != nil {
+
 		return nil, err
 	}
 
@@ -154,7 +156,6 @@ func reqOAlerts(api, token, after, before, page string) (*ORCHAlertsResponse, er
 
 	var data ORCHAlertsResponse
 	if err := json.Unmarshal(res, &data); err != nil {
-		logger.Errorf("数据解析失败！data: %v, 错误信息：%v", string(res), err)
 		return nil, err
 	}
 
@@ -162,13 +163,13 @@ func reqOAlerts(api, token, after, before, page string) (*ORCHAlertsResponse, er
 }
 
 func oauthToken(domain, gt, cid, cs, gName string) (string, error) {
-	ctx := context.Background()
-	tokenName := "o_token_" + cid
-
-	token, err := storage.Redis.Get(ctx, tokenName).Result()
-	if err == nil {
-		return token, nil
-	}
+	//ctx := context.Background()
+	//tokenName := "o_token_" + cid
+	//
+	//token, err := storage.Redis.Get(ctx, tokenName).Result()
+	//if err == nil {
+	//	return token, nil
+	//}
 
 	tokenApi := domain + "/oauth/token"
 	readerStr := fmt.Sprintf("grant_type=%v&client_id=%v&client_secret=%v", gt, cid, cs)
@@ -179,14 +180,16 @@ func oauthToken(domain, gt, cid, cs, gName string) (string, error) {
 		return "", err
 	}
 
+	logger.Errorf("登录%v, 请求：%v, 响应信息：%v", gName, tokenApi, body)
+
 	var data ORCHAuthResponse
 	if err := json.Unmarshal(body, &data); err != nil {
 		return "", errors.Wrapf(err, "获取 %v token失败！%v, 错误信息：%v, 响应数据：%s", gName, tokenApi, err, body)
 	}
 
-	token = data.TokenType + " " + data.AccessToken
-	expiresIn := time.Duration(time.Second * time.Duration(data.ExpiresIn))
-	storage.Redis.Set(ctx, tokenName, token, expiresIn).Err()
+	token := data.TokenType + " " + data.AccessToken
+	//expiresIn := time.Duration(time.Second * time.Duration(data.ExpiresIn))
+	//storage.Redis.Set(ctx, tokenName, token, expiresIn).Err()
 
 	return token, nil
 }
