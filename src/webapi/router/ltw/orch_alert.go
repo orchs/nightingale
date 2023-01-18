@@ -180,7 +180,7 @@ func oauthToken(domain, gt, cid, cs, gName string) (string, error) {
 		return "", err
 	}
 
-	logger.Errorf("登录%v, 请求：%v, 响应信息：%v", gName, tokenApi, body)
+	logger.Errorf("登录%v, 请求：%v, 响应信息：%s", gName, tokenApi, body)
 
 	var data ORCHAuthResponse
 	if err := json.Unmarshal(body, &data); err != nil {
