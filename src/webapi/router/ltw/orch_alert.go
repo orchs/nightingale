@@ -99,7 +99,7 @@ func handleAlerts(gid int64, gName string, alerts []ORCHAlertContent) {
 			firstTime, _ := time.ParseInLocation("2006-01-02 15:04:05", v.Events[0].CreatedAt, time.Local)
 			event.FirstTriggerTime = firstTime.Unix()
 			event.TriggerTime = firstTime.Unix()
-		} else if v.Events[0].Event == "closed" {
+		} else {
 			firstTime, _ := time.ParseInLocation("2006-01-02 15:04:05", v.Events[len(v.Events)-1].CreatedAt, time.Local)
 			curTime, _ := time.ParseInLocation("2006-01-02 15:04:05", v.Events[0].CreatedAt, time.Local)
 			event.FirstTriggerTime = firstTime.Unix()
