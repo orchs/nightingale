@@ -81,7 +81,6 @@ func SyncOAlert(c *gin.Context) {
 func handleAlerts(gid int64, gName string, alerts []ORCHAlertContent) {
 
 	for _, v := range alerts {
-		tags := fmt.Sprintf("target_name=%v,,target_type=%v,,rule_name=%v,,details=%v", v.TargetName, v.TargetType, v.Type, v.Details)
 		event := models.AlertCurEvent{
 			Cluster:     "Default",
 			GroupId:     gid,
@@ -93,20 +92,26 @@ func handleAlerts(gid int64, gName string, alerts []ORCHAlertContent) {
 			Severity:    SeverityMap[v.Level],
 			TargetIdent: v.TargetName,
 			IsRecovered: false,
-			Tags:        tags,
 		}
+
+		ft := ""
+		et := ""
 		if len(v.Events) == 1 {
-			firstTime, _ := time.ParseInLocation("2006-01-02 15:04:05", v.Events[0].CreatedAt, time.Local)
+			ft = v.Events[0].CreatedAt
+			firstTime, _ := time.ParseInLocation("2006-01-02 15:04:05", ft, time.Local)
 			event.FirstTriggerTime = firstTime.Unix()
 			event.TriggerTime = firstTime.Unix()
 		} else {
-			firstTime, _ := time.ParseInLocation("2006-01-02 15:04:05", v.Events[len(v.Events)-1].CreatedAt, time.Local)
-			curTime, _ := time.ParseInLocation("2006-01-02 15:04:05", v.Events[0].CreatedAt, time.Local)
+			ft = v.Events[len(v.Events)-1].CreatedAt
+			et = v.Events[0].CreatedAt
+			firstTime, _ := time.ParseInLocation("2006-01-02 15:04:05", ft, time.Local)
+			curTime, _ := time.ParseInLocation("2006-01-02 15:04:05", et, time.Local)
 			event.FirstTriggerTime = firstTime.Unix()
 			event.TriggerTime = firstTime.Unix()
 			event.LastEvalTime = curTime.Unix()
 			event.IsRecovered = true
 		}
+		event.Tags = fmt.Sprintf("target_name=%v,,target_type=%v,,rule_name=%v,,details=%v,,alert_id=%v,,trigger_time=%v,,last_time=%v", v.TargetName, v.TargetType, v.Type, v.Details, v.Id, ft, et)
 		persist(&event)
 	}
 }
@@ -115,22 +120,24 @@ func getOAlerts(after, before, domain, token string) ([]ORCHAlertContent, error)
 	api := domain + config.C.Ltw.ORCHAlertsApi
 	res, err := reqOAlerts(api, token, after, before, "0")
 	if err != nil {
-
+		logger.Errorf("调用orch接口出错：%v", err)
 		return nil, err
 	}
+	logger.Debugf("%v>>>>%v,共查询到%v条新告警：", after, before, res.TotalElements)
 
 	var alerts = res.Content
-
-	if res.TotalPages == 1 {
-		return alerts, nil
-	}
-
-	for i := 1; i < int(res.TotalPages); i++ {
-		res, err := reqOAlerts(api, token, after, before, string(i))
-		if err != nil {
-			return nil, err
+	if res.TotalPages > 1 {
+		for i := 1; i < int(res.TotalPages); i++ {
+			res, err := reqOAlerts(api, token, after, before, string(i))
+			if err != nil {
+				logger.Errorf("同步第%v页数据出错：%v", i, err)
+				return nil, err
+			}
+			alerts = append(alerts, res.Content...)
 		}
-		alerts = append(alerts, res.Content...)
+	}
+	for i, c := range alerts {
+		logger.Debugf("新告警%v：%v", i+1, c.Id)
 	}
 
 	return alerts, nil
@@ -163,14 +170,6 @@ func reqOAlerts(api, token, after, before, page string) (*ORCHAlertsResponse, er
 }
 
 func oauthToken(domain, gt, cid, cs, gName string) (string, error) {
-	//ctx := context.Background()
-	//tokenName := "o_token_" + cid
-	//
-	//token, err := storage.Redis.Get(ctx, tokenName).Result()
-	//if err == nil {
-	//	return token, nil
-	//}
-
 	tokenApi := domain + "/oauth/token"
 	readerStr := fmt.Sprintf("grant_type=%v&client_id=%v&client_secret=%v", gt, cid, cs)
 
@@ -180,16 +179,12 @@ func oauthToken(domain, gt, cid, cs, gName string) (string, error) {
 		return "", err
 	}
 
-	logger.Errorf("登录%v, 请求：%v, 响应信息：%s", gName, tokenApi, body)
-
 	var data ORCHAuthResponse
 	if err := json.Unmarshal(body, &data); err != nil {
 		return "", errors.Wrapf(err, "获取 %v token失败！%v, 错误信息：%v, 响应数据：%s", gName, tokenApi, err, body)
 	}
 
 	token := data.TokenType + " " + data.AccessToken
-	//expiresIn := time.Duration(time.Second * time.Duration(data.ExpiresIn))
-	//storage.Redis.Set(ctx, tokenName, token, expiresIn).Err()
 
 	return token, nil
 }
