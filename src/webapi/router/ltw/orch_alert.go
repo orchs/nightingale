@@ -123,7 +123,7 @@ func getOAlerts(after, before, domain, token string) ([]ORCHAlertContent, error)
 		logger.Errorf("调用orch接口出错：%v", err)
 		return nil, err
 	}
-	logger.Debugf("%v>>>>%v,共查询到%v条新告警：", after, before, res.TotalElements)
+	logger.Debugf("%v:%v>>>>%v,共查询到%v条新告警：", domain, after, before, res.TotalElements)
 
 	var alerts = res.Content
 	if res.TotalPages > 1 {
