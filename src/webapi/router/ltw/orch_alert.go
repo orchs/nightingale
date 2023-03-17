@@ -49,14 +49,14 @@ func SyncOAlert(c *gin.Context) {
 	// 3.拉取最新时间段内告警数据
 	now := time.Now()
 	bd, _ := time.ParseDuration("-8h00m30s")
-	before := now.Add(bd).Format("2006-01-02T03:04:05Z")
+	before := now.Add(bd).Format("2006-01-02T15:04:05Z")
 
 	ctx := context.Background()
 	lastUpdateTIme := LastUpdatePrefix + gidStr
 	after, err := storage.Redis.Get(ctx, lastUpdateTIme).Result()
 	if err != nil {
 		d, _ := time.ParseDuration("-9h00m30s")
-		after = now.Add(d).Format("2006-01-02T03:04:05Z")
+		after = now.Add(d).Format("2006-01-02T15:04:05Z")
 	}
 
 	logger.Debugf("开始同步%v数据,同步范围 %v ~ %v", cf.GroupName, after, before)
