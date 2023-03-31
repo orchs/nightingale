@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/didi/nightingale/v5/src/pkg/ltw"
 	"net/http"
 	"strings"
 
@@ -44,6 +45,12 @@ type userAddForm struct {
 func userAddPost(c *gin.Context) {
 	var f userAddForm
 	ginx.BindJSON(c, &f)
+
+	err := ltw.CheckPassword(12, 20, 3, f.Password)
+	if err != nil {
+		ginx.NewRender(c).Message(err)
+		return
+	}
 
 	password, err := models.CryptoPass(f.Password)
 	ginx.Dangerous(err)
@@ -109,6 +116,12 @@ type userPasswordForm struct {
 func userPasswordPut(c *gin.Context) {
 	var f userPasswordForm
 	ginx.BindJSON(c, &f)
+
+	err := ltw.CheckPassword(12, 20, 3, f.Password)
+	if err != nil {
+		ginx.NewRender(c).Message(err)
+		return
+	}
 
 	target := User(ginx.UrlParamInt64(c, "id"))
 

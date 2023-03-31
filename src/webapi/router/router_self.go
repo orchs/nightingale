@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/didi/nightingale/v5/src/pkg/ltw"
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/ginx"
 
@@ -48,5 +49,12 @@ func selfPasswordPut(c *gin.Context) {
 	var f selfPasswordForm
 	ginx.BindJSON(c, &f)
 	user := c.MustGet("user").(*models.User)
+
+	err := ltw.CheckPassword(12, 20, 3, f.NewPass)
+	if err != nil {
+		ginx.NewRender(c).Message(err)
+		return
+	}
+
 	ginx.NewRender(c).Message(user.ChangePassword(f.OldPass, f.NewPass))
 }
