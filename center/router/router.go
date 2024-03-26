@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -550,4 +551,30 @@ func Dangerous(c *gin.Context, v interface{}, code ...int) {
 	case error:
 		c.JSON(http.StatusOK, gin.H{"error": t.Error()})
 	}
+}
+
+func ValidatePassword(password, regexPattern string) bool {
+	matched, err := regexp.MatchString(regexPattern, password)
+	if err != nil {
+		fmt.Println("Invalid regular expression:", err)
+		return false
+	}
+	return matched
+}
+
+func checkPasswordComplexity(password string) bool {
+	if len(password) < 8 {
+		return false // 密码长度至少为8个字符
+	}
+
+	// 使用正则表达式检查密码是否包含字母、数字和特殊字符
+	alphaRegex := regexp.MustCompile(`[a-zA-Z]`)
+	digitRegex := regexp.MustCompile(`[0-9]`)
+	specialCharRegex := regexp.MustCompile(`[^a-zA-Z0-9]`)
+
+	hasAlpha := alphaRegex.MatchString(password)
+	hasDigit := digitRegex.MatchString(password)
+	hasSpecialChar := specialCharRegex.MatchString(password)
+
+	return hasAlpha && hasDigit && hasSpecialChar
 }

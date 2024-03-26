@@ -1,11 +1,13 @@
 package router
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/ccfos/nightingale/v6/models"
 	"github.com/ccfos/nightingale/v6/pkg/ormx"
+	"github.com/ccfos/nightingale/v6/pkg/secu"
 
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/ginx"
@@ -72,7 +74,22 @@ func (rt *Router) userAddPost(c *gin.Context) {
 	var f userAddForm
 	ginx.BindJSON(c, &f)
 
-	password, err := models.CryptoPass(rt.Ctx, f.Password)
+	password := f.Password
+	// need decode
+	if rt.HTTP.RSA.OpenRSA {
+		decPassWord, err := secu.Decrypt(f.Password, rt.HTTP.RSA.RSAPrivateKey, rt.HTTP.RSA.RSAPassWord)
+		if err != nil {
+			ginx.NewRender(c).Message(err)
+			return
+		}
+		password = decPassWord
+	}
+
+	if !checkPasswordComplexity(password) {
+		ginx.Dangerous(errors.New("密码过于简单，请重新输入！"))
+	}
+
+	password, err := models.CryptoPass(rt.Ctx, password)
 	ginx.Dangerous(err)
 
 	if len(f.Roles) == 0 {
@@ -162,8 +179,23 @@ func (rt *Router) userPasswordPut(c *gin.Context) {
 	ginx.BindJSON(c, &f)
 
 	target := User(rt.Ctx, ginx.UrlParamInt64(c, "id"))
+	password := f.Password
 
-	cryptoPass, err := models.CryptoPass(rt.Ctx, f.Password)
+	// need decode
+	if rt.HTTP.RSA.OpenRSA {
+		decPassWord, err := secu.Decrypt(f.Password, rt.HTTP.RSA.RSAPrivateKey, rt.HTTP.RSA.RSAPassWord)
+		if err != nil {
+			ginx.NewRender(c).Message(err)
+			return
+		}
+		password = decPassWord
+	}
+
+	if !checkPasswordComplexity(password) {
+		ginx.Dangerous(errors.New("密码过于简单，请重新输入！"))
+	}
+
+	cryptoPass, err := models.CryptoPass(rt.Ctx, password)
 	ginx.Dangerous(err)
 
 	ginx.NewRender(c).Message(target.UpdatePassword(rt.Ctx, cryptoPass, c.MustGet("username").(string)))
