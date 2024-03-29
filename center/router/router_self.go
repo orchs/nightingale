@@ -1,8 +1,11 @@
 package router
 
 import (
+	"errors"
+
 	"github.com/ccfos/nightingale/v6/models"
 	"github.com/ccfos/nightingale/v6/pkg/ormx"
+	"github.com/ccfos/nightingale/v6/pkg/secu"
 
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/ginx"
@@ -48,5 +51,28 @@ func (rt *Router) selfPasswordPut(c *gin.Context) {
 	var f selfPasswordForm
 	ginx.BindJSON(c, &f)
 	user := c.MustGet("user").(*models.User)
-	ginx.NewRender(c).Message(user.ChangePassword(rt.Ctx, f.OldPass, f.NewPass))
+
+	oldPass := f.OldPass
+	newPass := f.NewPass
+	var err error
+
+	// need decode
+	if rt.HTTP.RSA.OpenRSA {
+		oldPass, err = secu.Decrypt(oldPass, rt.HTTP.RSA.RSAPrivateKey, rt.HTTP.RSA.RSAPassWord)
+		if err != nil {
+			ginx.NewRender(c).Message(err)
+			return
+		}
+		newPass, err = secu.Decrypt(newPass, rt.HTTP.RSA.RSAPrivateKey, rt.HTTP.RSA.RSAPassWord)
+		if err != nil {
+			ginx.NewRender(c).Message(err)
+			return
+		}
+	}
+
+	if !checkPasswordComplexity(newPass) {
+		ginx.Dangerous(errors.New("密码过于简单，请重新输入！"))
+	}
+
+	ginx.NewRender(c).Message(user.ChangePassword(rt.Ctx, oldPass, newPass))
 }
